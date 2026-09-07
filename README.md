@@ -1,4 +1,4 @@
-# CNR Energies — Enterprise Station Operations Platform
+# CNR Energies | Fuel Station Operations Platform
 
 A full-stack, enterprise-grade station management and operations platform custom-built for **CNR Energies**. The system digitizes daily petrol station operations—featuring explicit shift lifecycle management, double-entry financial reconciliation, underground tank inventory auditing, automated B2B credit controls, and real-time management analytics.
 
