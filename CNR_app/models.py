@@ -20,3 +20,24 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', User.Role.SUPER_ADMIN)
         return self.create_user(email, password, **extra_fields)
+
+class User(AbstractUser):
+    class Role(models.TextChoices):
+        SUPER_ADMIN = 'SUPER_ADMIN', 'Super Admin'
+        MANAGER = 'MANAGER', 'Station Manager'
+        ATTENDANT = 'ATTENDANT', 'Pump Attendant'
+        ACCOUNTANT = 'ACCOUNTANT', 'Accountant'
+        INVENTORY_OFFICER = 'INVENTORY_OFFICER', 'Inventory Officer'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.ATTENDANT)
+    phone_number = models.CharField(max_length=10, blank=True, null=True)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    def __str__(self):
+        return f"{self.email} ({self.get_role_display()})"
