@@ -41,3 +41,12 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
+
+class Station(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    location = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
