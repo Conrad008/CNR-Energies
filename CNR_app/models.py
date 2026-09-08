@@ -70,3 +70,14 @@ class FuelPriceHistory(models.Model):
 
     class Meta:
         ordering = ['-effective_from']
+
+class Tank(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='tanks')
+    product = models.ForeignKey(FuelProduct, on_delete=models.PROTECT, related_name='tanks')
+    name = models.CharField(max_length=50)  
+    capacity_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    current_capacity_liters = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.name} ({self.product.name}) - {self.current_capacity_liters}L"
