@@ -81,3 +81,11 @@ class Tank(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.product.name}) - {self.current_capacity_liters}L"
+
+class Pump(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='pumps')
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.station.name} - {self.name}"
