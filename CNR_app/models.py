@@ -50,3 +50,12 @@ class Station(models.Model):
 
     def __str__(self):
         return self.name
+
+class FuelProduct(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50) 
+    code = models.CharField(max_length=10, unique=True)  
+    current_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        return f"{self.name} @ KSh {self.current_price}"
