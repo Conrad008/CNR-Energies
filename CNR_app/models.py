@@ -162,3 +162,12 @@ class DipReading(models.Model):
     expected_liters = models.DecimalField(max_digits=12, decimal_places=2)
     variance_liters = models.DecimalField(max_digits=12, decimal_places=2)
     recorded_at = models.DateTimeField(auto_now_add=True)
+
+class Delivery(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tank = models.ForeignKey(Tank, on_delete=models.CASCADE, related_name='deliveries')
+    supplier = models.CharField(max_length=100)
+    invoice_number = models.CharField(max_length=50)
+    quantity_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    received_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    received_at = models.DateTimeField(default=timezone.now)
