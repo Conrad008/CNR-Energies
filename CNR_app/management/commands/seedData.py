@@ -36,3 +36,34 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Superuser admin@cnrenergies.com created."))
         else:
             self.stdout.write("Superuser already exists — skipping password assignment.")
+
+        station, _ = Station.objects.get_or_create(
+            name="CNR Energies Main Branch",
+            defaults={"location": "Kericho, Kenya"},
+        )
+
+        pms, _ = FuelProduct.objects.get_or_create(
+            code="PMS", defaults={"name": "Super Petrol", "current_price": 195.00}
+        )
+        ago, _ = FuelProduct.objects.get_or_create(
+            code="AGO", defaults={"name": "Diesel", "current_price": 180.00}
+        )
+
+        tank_pms, _ = Tank.objects.get_or_create(
+            name="Tank 1 - Super Petrol",
+            station=station,
+            defaults={
+                "product": pms,
+                "capacity_liters": 30000.00,
+                "current_capacity_liters": 22000.00,
+            },
+        )
+        tank_ago, _ = Tank.objects.get_or_create(
+            name="Tank 2 - Diesel",
+            station=station,
+            defaults={
+                "product": ago,
+                "capacity_liters": 30000.00,
+                "current_capacity_liters": 18000.00,
+            },
+        )
