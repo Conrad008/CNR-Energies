@@ -186,3 +186,12 @@ class CreditCustomer(models.Model):
 
     def __str__(self):
         return f"{self.company_name} (Balance: KSh {self.current_balance})"
+
+class AuditLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=100)
+    model_name = models.CharField(max_length=100)
+    object_id = models.CharField(max_length=100, null=True, blank=True)
+    details = models.JSONField(default=dict)
+    timestamp = models.DateTimeField(auto_now_add=True)
