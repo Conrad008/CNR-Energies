@@ -99,3 +99,23 @@ class Nozzle(models.Model):
 
     def __str__(self):
         return f"{self.pump.name} - {self.name} ({self.product.name})"
+
+class Shift(models.Model):
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', 'Open'
+        ACTIVE = 'ACTIVE', 'Active'
+        PENDING_RECONCILIATION = 'PENDING_RECONCILIATION', 'Pending Reconciliation'
+        RECONCILED = 'RECONCILED', 'Reconciled'
+        CLOSED = 'CLOSED', 'Closed'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='shifts')
+    attendant = models.ForeignKey(User, on_delete=models.PROTECT, related_name='shifts')
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.OPEN)
+    opening_cash_float = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Shift {self.id} - {self.attendant.email} ({self.status})"
