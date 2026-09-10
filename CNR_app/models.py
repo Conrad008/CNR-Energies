@@ -137,3 +137,18 @@ class PumpReading(models.Model):
     @property
     def expected_revenue(self):
         return self.liters_sold * self.unit_price
+
+class Reconciliation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    shift = models.OneToOneField(Shift, on_delete=models.CASCADE, related_name='reconciliation')
+    
+    expected_revenue = models.DecimalField(max_digits=12, decimal_places=2)
+    actual_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    actual_mpesa = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    actual_card = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    actual_credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    
+    variance = models.DecimalField(max_digits=12, decimal_places=2)  # Actual Total - Expected
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_reconciliations')
+    created_at = models.DateTimeField(auto_now_add=True)
