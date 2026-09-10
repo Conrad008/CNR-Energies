@@ -171,3 +171,18 @@ class Delivery(models.Model):
     quantity_liters = models.DecimalField(max_digits=12, decimal_places=2)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT)
     received_at = models.DateTimeField(default=timezone.now)
+
+class CreditCustomer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company_name = models.CharField(max_length=150)
+    contact_email = models.EmailField()
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2)
+    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    is_active = models.BooleanField(default=True)
+
+    @property
+    def available_credit(self):
+        return self.credit_limit - self.current_balance
+
+    def __str__(self):
+        return f"{self.company_name} (Balance: KSh {self.current_balance})"
