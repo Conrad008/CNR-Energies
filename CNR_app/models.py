@@ -152,3 +152,13 @@ class Reconciliation(models.Model):
     is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_reconciliations')
     created_at = models.DateTimeField(auto_now_add=True)
+
+class DipReading(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tank = models.ForeignKey(Tank, on_delete=models.CASCADE, related_name='dip_readings')
+    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    dip_depth_cm = models.DecimalField(max_digits=8, decimal_places=2)
+    physical_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    expected_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    variance_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    recorded_at = models.DateTimeField(auto_now_add=True)
