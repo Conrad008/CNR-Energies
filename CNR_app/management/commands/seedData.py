@@ -67,3 +67,21 @@ class Command(BaseCommand):
                 "current_capacity_liters": 18000.00,
             },
         )
+
+        pump1, _ = Pump.objects.get_or_create(name="Pump 01", station=station)
+
+        nozzle_1a, nozzle_1a_created = Nozzle.objects.get_or_create(
+            name="Nozzle 1A", pump=pump1, defaults={"tank": tank_pms, "product": pms}
+        )
+        nozzle_1b, nozzle_1b_created = Nozzle.objects.get_or_create(
+            name="Nozzle 1B", pump=pump1, defaults={"tank": tank_ago, "product": ago}
+        )
+        for nozzle, was_created in ((nozzle_1a, nozzle_1a_created), (nozzle_1b, nozzle_1b_created)):
+            if not was_created and nozzle.product_id != nozzle.tank.product_id:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{nozzle.name} exists but product/tank mismatch — not auto-corrected."
+                    )
+                )
+
+        self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))
