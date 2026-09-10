@@ -21,3 +21,18 @@ class Command(BaseCommand):
                 "is_superuser": True,
             },
         )
+        if created:
+            password = os.environ.get("PASSWORD")
+            if not password:
+                password = secrets.token_urlsafe(16)
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"PASSWORD not set — generated random password: {password}\n"
+                        "Store this securely; it will not be shown again."
+                    )
+                )
+            admin.set_password(password)
+            admin.save()
+            self.stdout.write(self.style.SUCCESS("Superuser admin@cnrenergies.com created."))
+        else:
+            self.stdout.write("Superuser already exists — skipping password assignment.")
