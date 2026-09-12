@@ -6,8 +6,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
-        # Include custom claims in the JWT payload
         token['email'] = user.email
         token['role'] = user.role
         token['first_name'] = user.first_name
@@ -30,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'is_active', 'date_joined']
-        read_only_fields = ['id', 'date_joined']
+        read_only_fields = ['id', 'date_joined', 'role', 'is_active']
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -38,6 +36,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'password', 'first_name', 'last_name', 'role', 'phone_number']
+
+    def validate_role(self, value):
+        request = self.context.get('request')
+        if (
+            value == User.Role.SUPER_ADMIN
+            and not (request and request.user.is_authenticated and request.user.role == User.Role.SUPER_ADMIN)
+        ):
+            raise serializers.ValidationError("You do not have permission to assign this role.")
+        return value
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
