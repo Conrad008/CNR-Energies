@@ -22,3 +22,16 @@ class CurrentUserProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class UserListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all().order_by('-date_joined')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserCreateSerializer
+        return UserSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsSuperAdmin()]
+        return [IsManagerOrAdmin()]
