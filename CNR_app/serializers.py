@@ -68,3 +68,10 @@ class FuelProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = FuelProduct
         fields = ['id', 'name', 'code', 'current_price', 'price_history']
+
+class TankSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+
+    class Meta:
+        model = Tank
+        fields = ['id', 'station', 'product', 'product_name', 'name', 'capacity_liters', 'current_capacity_liters']
