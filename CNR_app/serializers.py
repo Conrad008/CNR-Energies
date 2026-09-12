@@ -75,3 +75,10 @@ class TankSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tank
         fields = ['id', 'station', 'product', 'product_name', 'name', 'capacity_liters', 'current_capacity_liters']
+
+class NozzleSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+
+    class Meta:
+        model = Nozzle
+        fields = ['id', 'pump', 'tank', 'product', 'product_name', 'name']
