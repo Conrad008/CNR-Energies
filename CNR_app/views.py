@@ -95,3 +95,12 @@ class FuelPriceUpdateView(APIView):
         product.save()
 
         return Response(FuelProductSerializer(product).data, status=status.HTTP_200_OK)
+
+class TankListCreateView(generics.ListCreateAPIView):
+    queryset = Tank.objects.all()
+    serializer_class = TankSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsManagerOrAdmin()]
+        return [permissions.IsAuthenticated()]
