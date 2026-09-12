@@ -48,3 +48,12 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsSuperAdmin]
+
+class StationListCreateView(generics.ListCreateAPIView):
+    queryset = Station.objects.all()
+    serializer_class = StationSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsSuperAdmin()]
+        return [permissions.IsAuthenticated()]
