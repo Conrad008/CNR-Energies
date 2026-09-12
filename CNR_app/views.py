@@ -104,3 +104,12 @@ class TankListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsManagerOrAdmin()]
         return [permissions.IsAuthenticated()]
+
+class PumpListCreateView(generics.ListCreateAPIView):
+    queryset = Pump.objects.all()
+    serializer_class = PumpSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsManagerOrAdmin()]
+        return [permissions.IsAuthenticated()]
