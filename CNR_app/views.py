@@ -113,3 +113,13 @@ class PumpListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsManagerOrAdmin()]
         return [permissions.IsAuthenticated()]
+
+
+class NozzleListCreateView(generics.ListCreateAPIView):
+    queryset = Nozzle.objects.all()
+    serializer_class = NozzleSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsManagerOrAdmin()]
+        return [permissions.IsAuthenticated()]
