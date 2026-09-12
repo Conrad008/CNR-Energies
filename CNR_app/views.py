@@ -57,3 +57,12 @@ class StationListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsSuperAdmin()]
         return [permissions.IsAuthenticated()]
+
+class FuelProductListCreateView(generics.ListCreateAPIView):
+    queryset = FuelProduct.objects.all()
+    serializer_class = FuelProductSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsManagerOrAdmin()]
+        return [permissions.IsAuthenticated()]
