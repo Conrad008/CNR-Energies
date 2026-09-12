@@ -82,3 +82,10 @@ class NozzleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nozzle
         fields = ['id', 'pump', 'tank', 'product', 'product_name', 'name']
+
+class PumpSerializer(serializers.ModelSerializer):
+    nozzles = NozzleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Pump
+        fields = ['id', 'station', 'name', 'nozzles']
