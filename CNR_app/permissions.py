@@ -11,3 +11,12 @@ class HasRole(BasePermission):
             user.is_authenticated and
             user.role in self.allowed_roles
         )
+
+class IsSuperAdmin(HasRole):
+    allowed_roles = (User.Role.SUPER_ADMIN,)
+
+class IsManagerOrAdmin(HasRole):
+    allowed_roles = (User.Role.SUPER_ADMIN, User.Role.MANAGER)
+
+class IsAccountantOrAdmin(HasRole):
+    allowed_roles = (User.Role.SUPER_ADMIN, User.Role.ACCOUNTANT, User.Role.MANAGER)        
