@@ -66,3 +66,32 @@ class FuelProductListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsManagerOrAdmin()]
         return [permissions.IsAuthenticated()]
+
+class FuelPriceUpdateView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            product = FuelProduct.objects.get(pk=pk)
+        except FuelProduct.DoesNotExist:
+            return Response({"error": "Fuel product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        new_price = request.data.get('price')
+        if not new_price or float(new_price) <= 0:
+            return Response({"error": "Invalid price"}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+
+        FuelPriceHistory.objects.filter(product=product, effective_to__isnull=True).update(effective_to=now)
+
+        FuelPriceHistory.objects.create(
+            product=product,
+            price=new_price,
+            effective_from=now,
+            updated_by=request.user
+        )
+        product.current_price = new_price
+        product.save()
+
+        return Response(FuelProductSerializer(product).data, status=status.HTTP_200_OK)
