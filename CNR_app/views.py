@@ -35,3 +35,8 @@ class UserListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsSuperAdmin()]
         return [IsManagerOrAdmin()]
+
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsSuperAdmin]
