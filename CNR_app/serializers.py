@@ -53,3 +53,11 @@ class StationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Station
         fields = '__all__'
+        
+class FuelPriceHistorySerializer(serializers.ModelSerializer):
+    updated_by_email = serializers.ReadOnlyField(source='updated_by.email')
+
+    class Meta:
+        model = FuelPriceHistory
+        fields = ['id', 'product', 'price', 'effective_from', 'effective_to', 'updated_by', 'updated_by_email']
+        read_only_fields = ['id', 'effective_from', 'updated_by']
