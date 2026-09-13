@@ -162,3 +162,32 @@ class StartShiftView(APIView):
             )
 
         return Response(ShiftSerializer(shift).data, status=status.HTTP_201_CREATED)
+
+class RecordClosingMetersView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            shift = Shift.objects.get(pk=pk, attendant=request.user)
+        except Shift.DoesNotExist:
+            return Response({"error": "Active shift not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        readings_data = request.data.get('readings', [])
+        for item in readings_data:
+            try:
+                reading = PumpReading.objects.get(shift=shift, nozzle_id=item['nozzle_id'])
+                closing_val = Decimal(str(item['closing_meter']))
+
+                if closing_val < reading.opening_meter:
+                    return Response({"error": f"Closing meter for nozzle {item['nozzle_id']} cannot be lower than opening meter."}, status=status.HTTP_400_BAD_REQUEST)
+
+                reading.closing_meter = closing_val
+                reading.save()
+            except PumpReading.DoesNotExist:
+                continue
+
+        shift.status = Shift.Status.PENDING_RECONCILIATION
+        shift.save()
+
+        return Response(ShiftSerializer(shift).data, status=status.HTTP_200_OK)
