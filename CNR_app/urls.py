@@ -11,9 +11,13 @@ from CNR_app.views import (
     TankListCreateView,
     PumpListCreateView,
     NozzleListCreateView,
+    StartShiftView, 
+    RecordClosingMetersView, 
+    ReconcileShiftView, 
+    ShiftListView
 )
 urlpatterns = [
-    path('auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('users/me/', CurrentUserProfileView.as_view(), name='user_profile'),
     path('users/', UserListCreateView.as_view(), name='user_list_create'),
@@ -24,4 +28,8 @@ urlpatterns = [
     path('tanks/', TankListCreateView.as_view(), name='tank_list_create'),
     path('pumps/', PumpListCreateView.as_view(), name='pump_list_create'),
     path('nozzles/', NozzleListCreateView.as_view(), name='nozzle_list_create'),
+    path('shifts/', ShiftListView.as_view(), name='shift_list'),
+    path('shifts/start/', StartShiftView.as_view(), name='shift_start'),
+    path('shifts/<uuid:pk>/close-meters/', RecordClosingMetersView.as_view(), name='shift_close_meters'),
+    path('shifts/<uuid:pk>/reconcile/', ReconcileShiftView.as_view(), name='shift_reconcile'),
 ]
