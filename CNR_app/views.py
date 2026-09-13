@@ -8,12 +8,14 @@ from CNR_app.serializers import CustomTokenObtainPairSerializer, UserSerializer,
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
-    TankSerializer, PumpSerializer, NozzleSerializer
+    TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
+    ReconciliationSerializer
 )
-from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin
+from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin
+from decimal import Decimal
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -123,3 +125,40 @@ class NozzleListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsManagerOrAdmin()]
         return [permissions.IsAuthenticated()]
+
+class StartShiftView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        station_id = request.data.get('station')
+        opening_float = request.data.get('opening_cash_float', 0.00)
+
+        if Shift.objects.filter(attendant=request.user, status__in=[Shift.Status.OPEN, Shift.Status.ACTIVE]).exists():
+            return Response({"error": "You already have an active shift open."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            station = Station.objects.get(id=station_id)
+        except Station.DoesNotExist:
+            return Response({"error": "Station not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        shift = Shift.objects.create(
+            station=station,
+            attendant=request.user,
+            opening_cash_float=opening_float,
+            status=Shift.Status.ACTIVE
+        )
+
+        nozzles = Nozzle.objects.filter(pump__station=station)
+        for nozzle in nozzles:
+            last_reading = PumpReading.objects.filter(nozzle=nozzle).exclude(closing_meter__isnull=True).order_by('-shift__start_time').first()
+            opening_meter = last_reading.closing_meter if last_reading else Decimal('0.00')
+
+            PumpReading.objects.create(
+                shift=shift,
+                nozzle=nozzle,
+                opening_meter=opening_meter,
+                unit_price=nozzle.product.current_price
+            )
+
+        return Response(ShiftSerializer(shift).data, status=status.HTTP_201_CREATED)
