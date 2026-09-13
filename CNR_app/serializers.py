@@ -104,3 +104,15 @@ class PumpReadingSerializer(serializers.ModelSerializer):
             'liters_sold', 'expected_revenue'
         ]
         read_only_fields = ['id', 'unit_price']
+
+class ShiftSerializer(serializers.ModelSerializer):
+    attendant_email = serializers.ReadOnlyField(source='attendant.email')
+    pump_readings = PumpReadingSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Shift
+        fields = [
+            'id', 'station', 'attendant', 'attendant_email', 'status',
+            'opening_cash_float', 'start_time', 'end_time', 'pump_readings'
+        ]
+        read_only_fields = ['id', 'attendant', 'status', 'start_time', 'end_time']
