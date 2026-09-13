@@ -191,3 +191,45 @@ class RecordClosingMetersView(APIView):
         shift.save()
 
         return Response(ShiftSerializer(shift).data, status=status.HTTP_200_OK)
+
+class ReconcileShiftView(APIView):
+    permission_classes = [IsAccountantOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            shift = Shift.objects.get(pk=pk)
+        except Shift.DoesNotExist:
+            return Response({"error": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        actual_cash = Decimal(str(request.data.get('actual_cash', '0.00')))
+        actual_mpesa = Decimal(str(request.data.get('actual_mpesa', '0.00')))
+        actual_card = Decimal(str(request.data.get('actual_card', '0.00')))
+        actual_credit = Decimal(str(request.data.get('actual_credit', '0.00')))
+
+        expected_total = Decimal('0.00')
+        for reading in shift.pump_readings.all():
+            expected_total += reading.expected_revenue
+
+        actual_total = actual_cash + actual_mpesa + actual_card + actual_credit
+        variance = actual_total - expected_total
+
+        reconciliation, _ = Reconciliation.objects.update_or_create(
+            shift=shift,
+            defaults={
+                'expected_revenue': expected_total,
+                'actual_cash': actual_cash,
+                'actual_mpesa': actual_mpesa,
+                'actual_card': actual_card,
+                'actual_credit': actual_credit,
+                'variance': variance,
+                'approved_by': request.user if request.user.role in [User.Role.SUPER_ADMIN, User.Role.MANAGER] else None,
+                'is_approved': True if request.user.role in [User.Role.SUPER_ADMIN, User.Role.MANAGER] else False
+            }
+        )
+
+        shift.status = Shift.Status.RECONCILED
+        shift.end_time = timezone.now()
+        shift.save()
+
+        return Response(ReconciliationSerializer(reconciliation).data, status=status.HTTP_200_OK)
