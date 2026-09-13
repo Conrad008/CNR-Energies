@@ -233,3 +233,8 @@ class ReconcileShiftView(APIView):
         shift.save()
 
         return Response(ReconciliationSerializer(reconciliation).data, status=status.HTTP_200_OK)
+
+class ShiftListView(generics.ListAPIView):
+    queryset = Shift.objects.all().order_by('-start_time')
+    serializer_class = ShiftSerializer
+    permission_classes = [permissions.IsAuthenticated]
