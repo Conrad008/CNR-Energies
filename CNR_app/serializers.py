@@ -116,3 +116,15 @@ class ShiftSerializer(serializers.ModelSerializer):
             'opening_cash_float', 'start_time', 'end_time', 'pump_readings'
         ]
         read_only_fields = ['id', 'attendant', 'status', 'start_time', 'end_time']
+
+class ReconciliationSerializer(serializers.ModelSerializer):
+    approved_by_email = serializers.ReadOnlyField(source='approved_by.email')
+
+    class Meta:
+        model = Reconciliation
+        fields = [
+            'id', 'shift', 'expected_revenue', 'actual_cash',
+            'actual_mpesa', 'actual_card', 'actual_credit',
+            'variance', 'is_approved', 'approved_by', 'approved_by_email', 'created_at'
+        ]
+        read_only_fields = ['id', 'expected_revenue', 'variance', 'is_approved', 'approved_by', 'created_at']
