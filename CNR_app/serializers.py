@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle
+from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -89,3 +89,18 @@ class PumpSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pump
         fields = ['id', 'station', 'name', 'nozzles']
+
+class PumpReadingSerializer(serializers.ModelSerializer):
+    nozzle_name = serializers.ReadOnlyField(source='nozzle.name')
+    product_name = serializers.ReadOnlyField(source='nozzle.product.name')
+    liters_sold = serializers.ReadOnlyField()
+    expected_revenue = serializers.ReadOnlyField()
+
+    class Meta:
+        model = PumpReading
+        fields = [
+            'id', 'shift', 'nozzle', 'nozzle_name', 'product_name',
+            'opening_meter', 'closing_meter', 'unit_price',
+            'liters_sold', 'expected_revenue'
+        ]
+        read_only_fields = ['id', 'unit_price']
