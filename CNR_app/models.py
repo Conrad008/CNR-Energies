@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from decimal import Decimal
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -132,7 +133,7 @@ class PumpReading(models.Model):
     def liters_sold(self):
         if self.closing_meter is not None:
             return self.closing_meter - self.opening_meter
-        return 0.00
+        return Decimal('0.00')
 
     @property
     def expected_revenue(self):
