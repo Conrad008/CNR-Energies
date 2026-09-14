@@ -8,13 +8,13 @@ from CNR_app.serializers import CustomTokenObtainPairSerializer, UserSerializer,
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
     TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
-    ReconciliationSerializer
+    ReconciliationSerializer, DipReadingSerializer, DeliverySerializer
 )
-from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin
+from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin, IsInventoryOfficerOrAdmin
 from decimal import Decimal
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -244,3 +244,36 @@ class ShiftListView(generics.ListAPIView):
     queryset = Shift.objects.all().order_by('-start_time')
     serializer_class = ShiftSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class RecordDipReadingView(APIView):
+    permission_classes = [IsInventoryOfficerOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            tank = Tank.objects.get(pk=pk)
+        except Tank.DoesNotExist:
+            return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        dip_level_cm = request.data.get('dip_level_cm')
+        dip_liters = request.data.get('dip_liters')
+
+        if not dip_liters or Decimal(str(dip_liters)) < 0:
+            return Response({"error": "Invalid dip volume in liters."}, status=status.HTTP_400_BAD_REQUEST)
+
+        dip_liters_dec = Decimal(str(dip_liters))
+
+        if dip_liters_dec > tank.capacity_liters:
+            return Response({"error": f"Dip reading ({dip_liters_dec}L) exceeds tank capacity ({tank.capacity_liters}L)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        reading = DipReading.objects.create(
+            tank=tank,
+            dip_level_cm=dip_level_cm,
+            dip_liters=dip_liters_dec,
+            recorded_by=request.user
+        )
+
+        tank.current_capacity_liters = dip_liters_dec
+        tank.save()
+
+        return Response(DipReadingSerializer(reading).data, status=status.HTTP_201_CREATED)
