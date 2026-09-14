@@ -140,3 +140,16 @@ class DipReadingSerializer(serializers.ModelSerializer):
             'dip_liters', 'recorded_by', 'recorded_by_email', 'recorded_at'
         ]
         read_only_fields = ['id', 'recorded_by', 'recorded_at']
+
+class DeliverySerializer(serializers.ModelSerializer):
+    received_by_email = serializers.ReadOnlyField(source='received_by.email')
+    tank_name = serializers.ReadOnlyField(source='tank.name')
+
+    class Meta:
+        model = Delivery
+        fields = [
+            'id', 'tank', 'tank_name', 'invoice_number', 'supplier_name',
+            'quantity_liters', 'unit_cost', 'total_cost',
+            'received_by', 'received_by_email', 'delivered_at'
+        ]
+        read_only_fields = ['id', 'total_cost', 'received_by', 'delivered_at']
