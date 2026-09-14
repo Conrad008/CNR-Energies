@@ -277,3 +277,40 @@ class RecordDipReadingView(APIView):
         tank.save()
 
         return Response(DipReadingSerializer(reading).data, status=status.HTTP_201_CREATED)
+
+class RecordDeliveryView(APIView):
+    permission_classes = [IsInventoryOfficerOrAdmin]
+
+    @transaction.atomic
+    def post(self, request):
+        tank_id = request.data.get('tank')
+        invoice = request.data.get('invoice_number')
+        supplier = request.data.get('supplier_name')
+        quantity = Decimal(str(request.data.get('quantity_liters', '0.00')))
+        unit_cost = Decimal(str(request.data.get('unit_cost', '0.00')))
+
+        try:
+            tank = Tank.objects.get(pk=tank_id)
+        except Tank.DoesNotExist:
+            return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        new_volume = tank.current_capacity_liters + quantity
+        if new_volume > tank.capacity_liters:
+            return Response({"error": f"Delivery of {quantity}L exceeds available tank ullage ({tank.capacity_liters - tank.current_capacity_liters}L)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        total_cost = quantity * unit_cost
+
+        delivery = Delivery.objects.create(
+            tank=tank,
+            invoice_number=invoice,
+            supplier_name=supplier,
+            quantity_liters=quantity,
+            unit_cost=unit_cost,
+            total_cost=total_cost,
+            received_by=request.user
+        )
+
+        tank.current_capacity_liters = new_volume
+        tank.save()
+
+        return Response(DeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
