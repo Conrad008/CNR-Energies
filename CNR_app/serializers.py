@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation
+from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -128,3 +128,15 @@ class ReconciliationSerializer(serializers.ModelSerializer):
             'variance', 'is_approved', 'approved_by', 'approved_by_email', 'created_at'
         ]
         read_only_fields = ['id', 'expected_revenue', 'variance', 'is_approved', 'approved_by', 'created_at']
+
+class DipReadingSerializer(serializers.ModelSerializer):
+    recorded_by_email = serializers.ReadOnlyField(source='recorded_by.email')
+    tank_name = serializers.ReadOnlyField(source='tank.name')
+
+    class Meta:
+        model = DipReading
+        fields = [
+            'id', 'tank', 'tank_name', 'dip_level_cm', 
+            'dip_liters', 'recorded_by', 'recorded_by_email', 'recorded_at'
+        ]
+        read_only_fields = ['id', 'recorded_by', 'recorded_at']
