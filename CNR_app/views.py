@@ -314,3 +314,25 @@ class RecordDeliveryView(APIView):
         tank.save()
 
         return Response(DeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
+
+class TankStockVarianceView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def get(self, request, pk):
+        try:
+            tank = Tank.objects.get(pk=pk)
+        except Tank.DoesNotExist:
+            return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        latest_dip = DipReading.objects.filter(tank=tank).order_by('-recorded_at').first()
+        physical_liters = latest_dip.dip_liters if latest_dip else tank.current_capacity_liters
+
+        return Response({
+            "tank_id": tank.id,
+            "tank_name": tank.name,
+            "product": tank.product.name,
+            "capacity_liters": tank.capacity_liters,
+            "current_recorded_liters": tank.current_capacity_liters,
+            "last_physical_dip_liters": physical_liters,
+            "last_dip_recorded_at": latest_dip.recorded_at if latest_dip else None
+        }, status=status.HTTP_200_OK)
