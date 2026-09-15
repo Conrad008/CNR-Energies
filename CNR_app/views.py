@@ -362,3 +362,36 @@ class CreditCustomerDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CreditCustomer.objects.all()
     serializer_class = CreditCustomerSerializer
     permission_classes = [IsManagerOrAdmin]
+
+class RecordCreditPaymentView(APIView):
+    permission_classes = [IsAccountantOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            customer = CreditCustomer.objects.get(pk=pk)
+        except CreditCustomer.DoesNotExist:
+            return Response({"error": "Credit customer not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        amount = Decimal(str(request.data.get('amount', '0.00')))
+        payment_method = request.data.get('payment_method', 'BANK_TRANSFER')
+        ref_number = request.data.get('reference_number', '')
+
+        if amount <= 0:
+            return Response({"error": "Payment amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount > customer.current_balance:
+            return Response({"error": f"Payment of KES {amount} exceeds current outstanding balance of KES {customer.current_balance}."}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment = CreditPayment.objects.create(
+            customer=customer,
+            amount=amount,
+            payment_method=payment_method,
+            reference_number=ref_number,
+            recorded_by=request.user
+        )
+
+        customer.current_balance -= amount
+        customer.save()
+
+        return Response(CreditPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
