@@ -8,11 +8,12 @@ from CNR_app.serializers import CustomTokenObtainPairSerializer, UserSerializer,
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading, CreditCustomer, CreditPayment
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
     TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
-    ReconciliationSerializer, DipReadingSerializer, DeliverySerializer
+    ReconciliationSerializer, DipReadingSerializer, DeliverySerializer,CreditCustomerSerializer, 
+    CreditPaymentSerializer
 )
 from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin, IsInventoryOfficerOrAdmin
 from decimal import Decimal
@@ -337,7 +338,7 @@ class TankStockVarianceView(APIView):
 
         latest_dip = DipReading.objects.filter(tank=tank).order_by('-recorded_at').first()
         physical_liters = latest_dip.physical_liters if latest_dip else tank.current_capacity_liters
-        
+
         return Response({
             "tank_id": tank.id,
             "tank_name": tank.name,
@@ -347,3 +348,12 @@ class TankStockVarianceView(APIView):
             "last_physical_dip_liters": physical_liters,
             "last_dip_recorded_at": latest_dip.recorded_at if latest_dip else None
         }, status=status.HTTP_200_OK)
+
+class CreditCustomerListCreateView(generics.ListCreateAPIView):
+    queryset = CreditCustomer.objects.all().order_by('-created_at')
+    serializer_class = CreditCustomerSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsManagerOrAdmin()]
+        return [permissions.IsAuthenticated()]
