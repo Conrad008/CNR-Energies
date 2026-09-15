@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery
+from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -154,3 +154,15 @@ class DeliverySerializer(serializers.ModelSerializer):
             'received_by', 'received_by_email', 'received_at'
         ]
         read_only_fields = ['id', 'total_cost', 'received_by', 'received_at']
+
+class CreditCustomerSerializer(serializers.ModelSerializer):
+    available_credit = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CreditCustomer
+        fields = [
+            'id', 'name', 'company_name', 'phone', 'email',
+            'credit_limit', 'current_balance', 'available_credit',
+            'is_active', 'created_at'
+        ]
+        read_only_fields = ['id', 'current_balance', 'created_at']
