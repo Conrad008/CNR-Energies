@@ -170,9 +170,11 @@ class Delivery(models.Model):
     supplier = models.CharField(max_length=100)
     invoice_number = models.CharField(max_length=50)
     quantity_liters = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT)
     received_at = models.DateTimeField(default=timezone.now)
-
+    
 class CreditCustomer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=150)
