@@ -255,7 +255,7 @@ class RecordDipReadingView(APIView):
         except Tank.DoesNotExist:
             return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        dip_depth_cm = request.data.get('dip_level_cm')  # keep incoming key name if that's what the frontend sends
+        dip_depth_cm = request.data.get('dip_level_cm')
         physical_liters = request.data.get('dip_liters')
 
         if not physical_liters or Decimal(str(physical_liters)) < 0:
@@ -293,7 +293,7 @@ class RecordDeliveryView(APIView):
     def post(self, request):
         tank_id = request.data.get('tank')
         invoice = request.data.get('invoice_number')
-        supplier = request.data.get('supplier_name')
+        supplier = request.data.get('supplier_name')  # incoming payload key, fine to keep as-is
         quantity = Decimal(str(request.data.get('quantity_liters', '0.00')))
         unit_cost = Decimal(str(request.data.get('unit_cost', '0.00')))
 
@@ -304,14 +304,17 @@ class RecordDeliveryView(APIView):
 
         new_volume = tank.current_capacity_liters + quantity
         if new_volume > tank.capacity_liters:
-            return Response({"error": f"Delivery of {quantity}L exceeds available tank ullage ({tank.capacity_liters - tank.current_capacity_liters}L)."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": f"Delivery of {quantity}L exceeds available tank ullage ({tank.capacity_liters - tank.current_capacity_liters}L)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         total_cost = quantity * unit_cost
 
         delivery = Delivery.objects.create(
             tank=tank,
             invoice_number=invoice,
-            supplier_name=supplier,
+            supplier=supplier,          
             quantity_liters=quantity,
             unit_cost=unit_cost,
             total_cost=total_cost,
@@ -333,8 +336,8 @@ class TankStockVarianceView(APIView):
             return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
 
         latest_dip = DipReading.objects.filter(tank=tank).order_by('-recorded_at').first()
-        physical_liters = latest_dip.dip_liters if latest_dip else tank.current_capacity_liters
-
+        physical_liters = latest_dip.physical_liters if latest_dip else tank.current_capacity_liters
+        
         return Response({
             "tank_id": tank.id,
             "tank_name": tank.name,
