@@ -1,3 +1,4 @@
+from django.http import request
 from rest_framework.permissions import BasePermission
 from CNR_app.models import User
 
@@ -20,3 +21,9 @@ class IsManagerOrAdmin(HasRole):
 
 class IsAccountantOrAdmin(HasRole):
     allowed_roles = (User.Role.SUPER_ADMIN, User.Role.ACCOUNTANT, User.Role.MANAGER)        
+
+class IsInventoryOfficerOrAdmin(HasRole):
+    allowed_roles = (User.Role.SUPER_ADMIN, User.Role.INVENTORY_OFFICER, User.Role.MANAGER)
+
+class IsAttendantOrAdmin(HasRole):
+    allowed_roles = (User.Role.SUPER_ADMIN, User.Role.ATTENDANT, User.Role.MANAGER)
