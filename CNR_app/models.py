@@ -174,7 +174,7 @@ class Delivery(models.Model):
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT)
     received_at = models.DateTimeField(default=timezone.now)
-    
+
 class CreditCustomer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=150)
@@ -189,6 +189,43 @@ class CreditCustomer(models.Model):
 
     def __str__(self):
         return f"{self.company_name} (Balance: KSh {self.current_balance})"
+
+class CreditCustomer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    company_name = models.CharField(max_length=150, blank=True)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def available_credit(self):
+        return self.credit_limit - self.current_balance
+
+    def __str__(self):
+        return f"{self.name} ({self.company_name or 'Individual'})"
+
+
+class CreditPayment(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = 'CASH', 'Cash'
+        MPESA = 'MPESA', 'M-Pesa'
+        BANK_TRANSFER = 'BANK_TRANSFER', 'Bank Transfer'
+        CHEQUE = 'CHEQUE', 'Cheque'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer = models.ForeignKey(CreditCustomer, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.BANK_TRANSFER)
+    reference_number = models.CharField(max_length=100, blank=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recorded_credit_payments')
+    payment_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.name} - KES {self.amount} ({self.payment_method})"
 
 class AuditLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
