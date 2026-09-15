@@ -166,3 +166,16 @@ class CreditCustomerSerializer(serializers.ModelSerializer):
             'is_active', 'created_at'
         ]
         read_only_fields = ['id', 'current_balance', 'created_at']
+
+class CreditPaymentSerializer(serializers.ModelSerializer):
+    recorded_by_email = serializers.ReadOnlyField(source='recorded_by.email')
+    customer_name = serializers.ReadOnlyField(source='customer.name')
+
+    class Meta:
+        model = CreditPayment
+        fields = [
+            'id', 'customer', 'customer_name', 'amount',
+            'payment_method', 'reference_number',
+            'recorded_by', 'recorded_by_email', 'payment_date'
+        ]
+        read_only_fields = ['id', 'recorded_by', 'payment_date']
