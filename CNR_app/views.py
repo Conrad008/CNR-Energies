@@ -357,3 +357,8 @@ class CreditCustomerListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsManagerOrAdmin()]
         return [permissions.IsAuthenticated()]
+
+class CreditCustomerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CreditCustomer.objects.all()
+    serializer_class = CreditCustomerSerializer
+    permission_classes = [IsManagerOrAdmin]
