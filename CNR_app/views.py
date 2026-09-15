@@ -255,25 +255,33 @@ class RecordDipReadingView(APIView):
         except Tank.DoesNotExist:
             return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        dip_level_cm = request.data.get('dip_level_cm')
-        dip_liters = request.data.get('dip_liters')
+        dip_depth_cm = request.data.get('dip_level_cm')  # keep incoming key name if that's what the frontend sends
+        physical_liters = request.data.get('dip_liters')
 
-        if not dip_liters or Decimal(str(dip_liters)) < 0:
+        if not physical_liters or Decimal(str(physical_liters)) < 0:
             return Response({"error": "Invalid dip volume in liters."}, status=status.HTTP_400_BAD_REQUEST)
 
-        dip_liters_dec = Decimal(str(dip_liters))
+        physical_liters_dec = Decimal(str(physical_liters))
 
-        if dip_liters_dec > tank.capacity_liters:
-            return Response({"error": f"Dip reading ({dip_liters_dec}L) exceeds tank capacity ({tank.capacity_liters}L)."}, status=status.HTTP_400_BAD_REQUEST)
+        if physical_liters_dec > tank.capacity_liters:
+            return Response(
+                {"error": f"Dip reading ({physical_liters_dec}L) exceeds tank capacity ({tank.capacity_liters}L)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        expected_liters = tank.current_capacity_liters
+        variance_liters = physical_liters_dec - expected_liters
 
         reading = DipReading.objects.create(
             tank=tank,
-            dip_level_cm=dip_level_cm,
-            dip_liters=dip_liters_dec,
+            dip_depth_cm=dip_depth_cm,
+            physical_liters=physical_liters_dec,
+            expected_liters=expected_liters,
+            variance_liters=variance_liters,
             recorded_by=request.user
         )
 
-        tank.current_capacity_liters = dip_liters_dec
+        tank.current_capacity_liters = physical_liters_dec
         tank.save()
 
         return Response(DipReadingSerializer(reading).data, status=status.HTTP_201_CREATED)
