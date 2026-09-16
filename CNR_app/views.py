@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.db.models.aggregates import Sum
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -438,3 +440,46 @@ class RecordCreditSaleView(APIView):
         customer.save()
 
         return Response(CreditSaleSerializer(sale).data, status=status.HTTP_201_CREATED)
+
+class ExecutiveDashboardAnalyticsView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def get(self, request):
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now() - timedelta(days=days)
+
+        reconciliations = Reconciliation.objects.filter(shift__start_time__gte=start_date)
+
+        financial = reconciliations.aggregate(
+            total_expected=Sum('expected_revenue'),
+            total_cash=Sum('actual_cash'),
+            total_mpesa=Sum('actual_mpesa'),
+            total_card=Sum('actual_card'),
+            total_credit=Sum('actual_credit'),
+            total_variance=Sum('variance')
+        )
+
+        total_shifts = Shift.objects.filter(start_time__gte=start_date).count()
+        completed_shifts = Shift.objects.filter(start_time__gte=start_date, status=Shift.Status.RECONCILED).count()
+
+        return Response({
+            "period_days": days,
+            "total_shifts_logged": total_shifts,
+            "completed_reconciled_shifts": completed_shifts,
+            "revenue_summary": {
+                "total_expected_revenue": financial['total_expected'] or Decimal('0.00'),
+                "total_actual_collected": (
+                    (financial['total_cash'] or Decimal('0.00')) +
+                    (financial['total_mpesa'] or Decimal('0.00')) +
+                    (financial['total_card'] or Decimal('0.00')) +
+                    (financial['total_credit'] or Decimal('0.00'))
+                ),
+                "total_variance": financial['total_variance'] or Decimal('0.00')
+            },
+            "payment_channel_breakdown": {
+                "cash": financial['total_cash'] or Decimal('0.00'),
+                "mpesa": financial['total_mpesa'] or Decimal('0.00'),
+                "card": financial['total_card'] or Decimal('0.00'),
+                "b2b_credit": financial['total_credit'] or Decimal('0.00')
+            }
+        }, status=status.HTTP_200_OK)
