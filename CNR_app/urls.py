@@ -3,6 +3,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from CNR_app.views import (
     CustomTokenObtainPairView,
     CurrentUserProfileView,
+    RecordCreditSaleView,
     UserListCreateView,
     UserDetailView,
     StationListCreateView,
@@ -17,7 +18,10 @@ from CNR_app.views import (
     ShiftListView,
     RecordDipReadingView, 
     RecordDeliveryView, 
-    TankStockVarianceView
+    TankStockVarianceView,
+    CreditCustomerListCreateView,
+    CreditCustomerDetailView,
+    RecordCreditPaymentView
 )
 urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
@@ -38,4 +42,8 @@ urlpatterns = [
     path('tanks/<uuid:pk>/dip/', RecordDipReadingView.as_view(), name='tank_dip'),
     path('tanks/<uuid:pk>/variance/', TankStockVarianceView.as_view(), name='tank_variance'),
     path('deliveries/', RecordDeliveryView.as_view(), name='record_delivery'),
+    path('credit-customers/', CreditCustomerListCreateView.as_view(), name='credit_customer_list_create'),
+    path('credit-customers/<uuid:pk>/', CreditCustomerDetailView.as_view(), name='credit_customer_detail'),
+    path('credit-customers/<uuid:pk>/payments/', RecordCreditPaymentView.as_view(), name='record_credit_payment'),
+    path('credit-customers/<uuid:pk>/sales/', RecordCreditSaleView.as_view(), name='credit-customer-sale'),
 ]
