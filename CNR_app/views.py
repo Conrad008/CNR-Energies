@@ -483,3 +483,26 @@ class ExecutiveDashboardAnalyticsView(APIView):
                 "b2b_credit": financial['total_credit'] or Decimal('0.00')
             }
         }, status=status.HTTP_200_OK)
+
+class StockSummaryAnalyticsView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def get(self, request):
+        tanks = Tank.objects.all()
+        summary = []
+
+        for tank in tanks:
+            fill_percentage = round((tank.current_capacity_liters / tank.capacity_liters) * 100, 2) if tank.capacity_liters > 0 else 0
+            summary.append({
+                "tank_id": tank.id,
+                "tank_name": tank.name,
+                "station_name": tank.station.name,
+                "fuel_product": tank.product.name,
+                "capacity_liters": tank.capacity_liters,
+                "current_capacity_liters": tank.current_capacity_liters,
+                "remaining_ullage_liters": tank.capacity_liters - tank.current_capacity_liters,
+                "fill_percentage": fill_percentage,
+                "is_low_stock": fill_percentage < 20.0
+            })
+
+        return Response(summary, status=status.HTTP_200_OK)
