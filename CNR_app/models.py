@@ -175,20 +175,6 @@ class Delivery(models.Model):
     received_by = models.ForeignKey(User, on_delete=models.PROTECT)
     received_at = models.DateTimeField(default=timezone.now)
 
-class CreditCustomer(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    company_name = models.CharField(max_length=150)
-    contact_email = models.EmailField()
-    credit_limit = models.DecimalField(max_digits=12, decimal_places=2)
-    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    is_active = models.BooleanField(default=True)
-
-    @property
-    def available_credit(self):
-        return self.credit_limit - self.current_balance
-
-    def __str__(self):
-        return f"{self.company_name} (Balance: KSh {self.current_balance})"
 
 class CreditCustomer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -208,7 +194,18 @@ class CreditCustomer(models.Model):
     def __str__(self):
         return f"{self.name} ({self.company_name or 'Individual'})"
 
+class CreditSale(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer = models.ForeignKey(CreditCustomer, on_delete=models.PROTECT, related_name='credit_sales')
+    shift = models.ForeignKey(Shift, on_delete=models.SET_NULL, null=True, blank=True, related_name='credit_sales')
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    description = models.CharField(max_length=255, blank=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recorded_credit_sales')
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.customer.name} - KES {self.amount} sale"
+    
 class CreditPayment(models.Model):
     class PaymentMethod(models.TextChoices):
         CASH = 'CASH', 'Cash'
