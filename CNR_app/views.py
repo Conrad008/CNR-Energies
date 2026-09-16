@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from CNR_app.models import User
-from CNR_app.serializers import CustomTokenObtainPairSerializer, UserSerializer, UserCreateSerializer
+from CNR_app.serializers import CreditSaleSerializer, CustomTokenObtainPairSerializer, UserSerializer, UserCreateSerializer
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading, CreditCustomer, CreditPayment
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading, CreditCustomer, CreditPayment, CreditSale
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
     TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
@@ -395,3 +395,46 @@ class RecordCreditPaymentView(APIView):
         customer.save()
 
         return Response(CreditPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+class RecordCreditSaleView(APIView):
+    permission_classes = [IsAccountantOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            customer = CreditCustomer.objects.select_for_update().get(pk=pk)
+        except CreditCustomer.DoesNotExist:
+            return Response({"error": "Credit customer not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not customer.is_active:
+            return Response({"error": "This customer's credit account is inactive."}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = Decimal(str(request.data.get('amount', '0.00')))
+        if amount <= 0:
+            return Response({"error": "Sale amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if customer.current_balance + amount > customer.credit_limit:
+            return Response({
+                "error": f"Sale of KES {amount} would exceed credit limit. Available credit: KES {customer.available_credit}."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        shift_id = request.data.get('shift')
+        shift = None
+        if shift_id:
+            try:
+                shift = Shift.objects.get(pk=shift_id)
+            except Shift.DoesNotExist:
+                return Response({"error": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        sale = CreditSale.objects.create(
+            customer=customer,
+            shift=shift,
+            amount=amount,
+            description=request.data.get('description', ''),
+            recorded_by=request.user
+        )
+
+        customer.current_balance += amount
+        customer.save()
+
+        return Response(CreditSaleSerializer(sale).data, status=status.HTTP_201_CREATED)
