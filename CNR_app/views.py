@@ -369,7 +369,7 @@ class RecordCreditPaymentView(APIView):
     @transaction.atomic
     def post(self, request, pk):
         try:
-            customer = CreditCustomer.objects.get(pk=pk)
+            customer = CreditCustomer.objects.select_for_update().get(pk=pk)
         except CreditCustomer.DoesNotExist:
             return Response({"error": "Credit customer not found."}, status=status.HTTP_404_NOT_FOUND)
 
