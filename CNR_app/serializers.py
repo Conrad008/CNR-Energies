@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment
+from CNR_app.models import User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment, CreditSale
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -14,7 +14,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        # Include user details in the login response body
         data['user'] = {
             'id': str(self.user.id),
             'email': self.user.email,
@@ -179,3 +178,12 @@ class CreditPaymentSerializer(serializers.ModelSerializer):
             'recorded_by', 'recorded_by_email', 'payment_date'
         ]
         read_only_fields = ['id', 'recorded_by', 'payment_date']
+
+class CreditSaleSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    recorded_by_email = serializers.CharField(source='recorded_by.email', read_only=True)
+
+    class Meta:
+        model = CreditSale
+        fields = ['id', 'customer', 'customer_name', 'shift', 'amount', 'description', 'recorded_by', 'recorded_by_email', 'created_at']
+        read_only_fields = ['id', 'recorded_by', 'created_at']
