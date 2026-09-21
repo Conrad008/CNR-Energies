@@ -21,7 +21,10 @@ from CNR_app.views import (
     TankStockVarianceView,
     CreditCustomerListCreateView,
     CreditCustomerDetailView,
-    RecordCreditPaymentView
+    RecordCreditPaymentView,
+    ExecutiveDashboardAnalyticsView,
+    StockSummaryAnalyticsView,
+    AuditLogListView
 )
 urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
@@ -46,4 +49,7 @@ urlpatterns = [
     path('credit-customers/<uuid:pk>/', CreditCustomerDetailView.as_view(), name='credit_customer_detail'),
     path('credit-customers/<uuid:pk>/payments/', RecordCreditPaymentView.as_view(), name='record_credit_payment'),
     path('credit-customers/<uuid:pk>/sales/', RecordCreditSaleView.as_view(), name='credit-customer-sale'),
+    path('analytics/dashboard/', ExecutiveDashboardAnalyticsView.as_view(), name='analytics_dashboard'),
+    path('analytics/stock-summary/', StockSummaryAnalyticsView.as_view(), name='analytics_stock_summary'),
+    path('audit-logs/', AuditLogListView.as_view(), name='audit_logs'),
 ]
