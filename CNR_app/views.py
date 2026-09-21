@@ -1,5 +1,5 @@
 from datetime import timedelta
-from django.db.models.aggregates import Sum
+from django.db.models.aggregates import Sum, Count, Q
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -10,12 +10,12 @@ from CNR_app.serializers import CreditSaleSerializer, CustomTokenObtainPairSeria
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, Tank, PumpReading, CreditCustomer, CreditPayment, CreditSale
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, PumpReading, CreditCustomer, CreditPayment, CreditSale, AuditLog
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
     TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
     ReconciliationSerializer, DipReadingSerializer, DeliverySerializer,CreditCustomerSerializer, 
-    CreditPaymentSerializer
+    CreditPaymentSerializer,AuditLogSerializer
 )
 from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin, IsInventoryOfficerOrAdmin
 from decimal import Decimal
@@ -506,3 +506,8 @@ class StockSummaryAnalyticsView(APIView):
             })
 
         return Response(summary, status=status.HTTP_200_OK)
+
+class AuditLogListView(generics.ListAPIView):
+    queryset = AuditLog.objects.all().order_by('-timestamp')
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsSuperAdmin]
