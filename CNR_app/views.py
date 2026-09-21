@@ -1,5 +1,5 @@
 from datetime import timedelta
-from django.db.models.aggregates import Sum, Count, Q
+from django.db.models import Sum, Count, Q
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
