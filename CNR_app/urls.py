@@ -24,7 +24,10 @@ from CNR_app.views import (
     RecordCreditPaymentView,
     ExecutiveDashboardAnalyticsView,
     StockSummaryAnalyticsView,
-    AuditLogListView
+    AuditLogListView,
+     InitiateSTKPushView, 
+     MpesaCallbackView, 
+     MpesaStatusView,
 )
 urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
@@ -52,4 +55,7 @@ urlpatterns = [
     path('analytics/dashboard/', ExecutiveDashboardAnalyticsView.as_view(), name='analytics_dashboard'),
     path('analytics/stock-summary/', StockSummaryAnalyticsView.as_view(), name='analytics_stock_summary'),
     path('audit-logs/', AuditLogListView.as_view(), name='audit_logs'),
+    path('mpesa/stk-push/', InitiateSTKPushView.as_view(), name='mpesa_stk_push'),
+    path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa_callback'),
+    path('mpesa/status/<str:checkout_id>/', MpesaStatusView.as_view(), name='mpesa_status'),
 ]
