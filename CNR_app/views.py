@@ -10,15 +10,17 @@ from CNR_app.serializers import CreditSaleSerializer, CustomTokenObtainPairSeria
 from CNR_app.permissions import IsSuperAdmin, IsManagerOrAdmin
 from django.db import transaction
 from django.utils import timezone
-from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, PumpReading, CreditCustomer, CreditPayment, CreditSale, AuditLog
+from CNR_app.models import Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, PumpReading, CreditCustomer, CreditPayment, CreditSale, AuditLog, MpesaTransaction
 from CNR_app.serializers import (
     StationSerializer, FuelProductSerializer, FuelPriceHistorySerializer,
     TankSerializer, PumpSerializer, NozzleSerializer, ShiftSerializer, PumpReadingSerializer, 
     ReconciliationSerializer, DipReadingSerializer, DeliverySerializer,CreditCustomerSerializer, 
-    CreditPaymentSerializer,AuditLogSerializer
+    CreditPaymentSerializer,AuditLogSerializer,MpesaTransactionSerializer
 )
 from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin, IsInventoryOfficerOrAdmin
 from decimal import Decimal
+from CNR_app.services.mpesa import stk_push, MpesaError
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
