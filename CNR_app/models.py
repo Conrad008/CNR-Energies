@@ -232,3 +232,27 @@ class AuditLog(models.Model):
     object_id = models.CharField(max_length=100, null=True, blank=True)
     details = models.JSONField(default=dict)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+class MpesaTransaction(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        SUCCESS = 'SUCCESS', 'Success'
+        FAILED = 'FAILED', 'Failed'
+        TIMEOUT = 'TIMEOUT', 'Timeout'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    shift = models.ForeignKey(Shift, on_delete=models.SET_NULL, null=True, blank=True, related_name='mpesa_transactions')
+    credit_customer = models.ForeignKey(CreditCustomer, on_delete=models.SET_NULL, null=True, blank=True)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    checkout_request_id = models.CharField(max_length=100, unique=True)
+    merchant_request_id = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    mpesa_receipt_number = models.CharField(max_length=50, blank=True)
+    result_desc = models.CharField(max_length=255, blank=True)
+    initiated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.phone_number} - KES {self.amount} ({self.status})"
