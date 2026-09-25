@@ -588,3 +588,13 @@ class MpesaCallbackView(APIView):
 
         txn.save()
         return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+class MpesaStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, checkout_id):
+        try:
+            txn = MpesaTransaction.objects.get(checkout_request_id=checkout_id)
+        except MpesaTransaction.DoesNotExist:
+            return Response({"error": "Transaction not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(MpesaTransactionSerializer(txn).data)
