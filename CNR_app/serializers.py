@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import AuditLog, User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment, CreditSale
+from CNR_app.models import AuditLog, User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment, CreditSale, MpesaTransaction
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -195,6 +195,16 @@ class AuditLogSerializer(serializers.ModelSerializer):
         model = AuditLog
         fields = [
             'id', 'user', 'user_email', 'action', 
-            'model_affected', 'details', 'timestamp'
+            'model_name', 'details', 'timestamp'
         ]
-        read_only_fields = ['id', 'user', 'action', 'model_affected', 'details', 'timestamp']
+        read_only_fields = ['id', 'user', 'action', 'model_name', 'details', 'timestamp']
+
+class MpesaTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MpesaTransaction
+        fields = [
+            'id', 'shift', 'credit_customer', 'phone_number', 'amount',
+            'checkout_request_id', 'status', 'mpesa_receipt_number',
+            'result_desc', 'created_at', 'completed_at'
+        ]
+        read_only_fields = fields
