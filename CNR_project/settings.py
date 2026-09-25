@@ -165,3 +165,14 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
 }
+
+MPESA_ENV = os.environ.get('MPESA_ENV', 'sandbox')
+MPESA_CONSUMER_KEY = os.environ.get('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.environ.get('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = os.environ.get('MPESA_SHORTCODE')
+MPESA_PASSKEY = os.environ.get('MPESA_PASSKEY')
+MPESA_CALLBACK_URL = os.environ.get('MPESA_CALLBACK_URL')
+MPESA_BASE_URL = (
+    'https://sandbox.safaricom.co.ke' if MPESA_ENV == 'sandbox'
+    else 'https://api.safaricom.co.ke'
+)
