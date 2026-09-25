@@ -20,6 +20,8 @@ from CNR_app.serializers import (
 from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAdmin, IsInventoryOfficerOrAdmin
 from decimal import Decimal
 from CNR_app.services.mpesa import stk_push, MpesaError
+import re
+
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -513,3 +515,46 @@ class AuditLogListView(generics.ListAPIView):
     queryset = AuditLog.objects.all().order_by('-timestamp')
     serializer_class = AuditLogSerializer
     permission_classes = [IsSuperAdmin]
+
+
+class InitiateSTKPushView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        raw_phone = str(request.data.get('phone_number', ''))
+        digits = re.sub(r'\D', '', raw_phone)
+        if digits.startswith('0'):
+            digits = '254' + digits[1:]
+        elif digits.startswith('7') or digits.startswith('1'):
+            digits = '254' + digits
+        if not re.fullmatch(r'254(7|1)\d{8}', digits):
+            return Response({"error": "Enter a valid Kenyan phone number, e.g. 0712345678."}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = request.data.get('amount')
+        try:
+            amount = Decimal(str(amount))
+        except Exception:
+            return Response({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+        if amount <= 0:
+            return Response({"error": "Please input a valid amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+        shift_id = request.data.get('shift')
+        customer_id = request.data.get('credit_customer')
+        reference = request.data.get('reference', 'CNR Energies')
+
+        try:
+            result = stk_push(digits, amount, reference, "Fuel payment")
+        except MpesaError as e:
+            return Response({"error": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        txn = MpesaTransaction.objects.create(
+            shift_id=shift_id if shift_id else None,
+            credit_customer_id=customer_id if customer_id else None,
+            phone_number=digits,
+            amount=amount,
+            checkout_request_id=result['CheckoutRequestID'],
+            merchant_request_id=result.get('MerchantRequestID', ''),
+            initiated_by=request.user,
+        )
+        return Response(MpesaTransactionSerializer(txn).data, status=status.HTTP_201_CREATED)
+
