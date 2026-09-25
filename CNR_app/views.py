@@ -558,3 +558,33 @@ class InitiateSTKPushView(APIView):
         )
         return Response(MpesaTransactionSerializer(txn).data, status=status.HTTP_201_CREATED)
 
+
+class MpesaCallbackView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        body = request.data.get('Body', {}).get('stkCallback', {})
+        checkout_id = body.get('CheckoutRequestID')
+        result_code = body.get('ResultCode')
+        result_desc = body.get('ResultDesc', '')
+
+        try:
+            txn = MpesaTransaction.objects.get(checkout_request_id=checkout_id)
+        except MpesaTransaction.DoesNotExist:
+            return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+        txn.result_desc = result_desc
+        txn.completed_at = timezone.now()
+
+        if result_code == 0:
+            items = {i['Name']: i.get('Value') for i in body.get('CallbackMetadata', {}).get('Item', [])}
+            txn.status = MpesaTransaction.Status.SUCCESS
+            txn.mpesa_receipt_number = items.get('MpesaReceiptNumber', '')
+        elif result_code == 1032:
+            txn.status = MpesaTransaction.Status.TIMEOUT
+        else:
+            txn.status = MpesaTransaction.Status.FAILED
+
+        txn.save()
+        return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
