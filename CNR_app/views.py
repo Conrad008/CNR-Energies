@@ -21,8 +21,7 @@ from CNR_app.permissions import IsManagerOrAdmin, IsSuperAdmin, IsAccountantOrAd
 from decimal import Decimal
 from CNR_app.services.mpesa import stk_push, MpesaError
 import re
-
-
+from CNR_app.audit import log_action
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -52,6 +51,10 @@ class UserListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsSuperAdmin()]
         return [IsManagerOrAdmin()]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        log_action(self.request.user, 'USER_CREATED', 'User', user.id, {'email': user.email, 'role': user.role})
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
@@ -90,6 +93,7 @@ class FuelPriceUpdateView(APIView):
         if not new_price or float(new_price) <= 0:
             return Response({"error": "Invalid price"}, status=status.HTTP_400_BAD_REQUEST)
 
+        old_price = product.current_price
         now = timezone.now()
 
         FuelPriceHistory.objects.filter(product=product, effective_to__isnull=True).update(effective_to=now)
@@ -102,6 +106,7 @@ class FuelPriceUpdateView(APIView):
         )
         product.current_price = new_price
         product.save()
+        log_action(request.user, 'PRICE_UPDATE', 'FuelProduct', product.id, {'old_price': str(old_price), 'new_price': str(new_price)})
 
         return Response(FuelProductSerializer(product).data, status=status.HTTP_200_OK)
 
@@ -188,7 +193,8 @@ class RecordClosingMetersView(APIView):
 
         readings_data = request.data.get('readings', [])
 
-        to_update = []  
+        # --- Pass 1: validate everything, write nothing yet ---
+        to_update = []  # (reading, closing_val, is_first_close)
         for item in readings_data:
             try:
                 reading = PumpReading.objects.select_related('nozzle__tank').get(shift=shift, nozzle_id=item['nozzle_id'])
@@ -211,6 +217,7 @@ class RecordClosingMetersView(APIView):
 
             to_update.append((reading, closing_val, reading.closing_meter is None))
 
+        # --- Pass 2: everything validated, now write ---
         tank_deductions = {}
         for reading, closing_val, is_first_close in to_update:
             if is_first_close:
@@ -271,6 +278,8 @@ class ReconcileShiftView(APIView):
         shift.status = Shift.Status.RECONCILED
         shift.end_time = timezone.now()
         shift.save()
+        if reconciliation.is_approved:
+            log_action(request.user, 'RECONCILIATION_APPROVED', 'Shift', shift.id, {'variance': str(variance)})
 
         return Response(ReconciliationSerializer(reconciliation).data, status=status.HTTP_200_OK)
 
