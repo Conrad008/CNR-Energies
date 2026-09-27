@@ -258,17 +258,23 @@ class RecordDipReadingView(APIView):
     @transaction.atomic
     def post(self, request, pk):
         try:
-            tank = Tank.objects.get(pk=pk)
+            tank = Tank.objects.select_for_update().get(pk=pk)
         except Tank.DoesNotExist:
             return Response({"error": "Tank not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        dip_depth_cm = request.data.get('dip_level_cm')
-        physical_liters = request.data.get('dip_liters')
+        dip_depth_cm = request.data.get('dip_depth_cm')
+        physical_liters = request.data.get('physical_liters')
 
-        if not physical_liters or Decimal(str(physical_liters)) < 0:
+        if physical_liters is None:
+            return Response({"error": "physical_liters is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            physical_liters_dec = Decimal(str(physical_liters))
+        except Exception:
+            return Response({"error": "Invalid physical_liters value."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if physical_liters_dec < 0:
             return Response({"error": "Invalid dip volume in liters."}, status=status.HTTP_400_BAD_REQUEST)
-
-        physical_liters_dec = Decimal(str(physical_liters))
 
         if physical_liters_dec > tank.capacity_liters:
             return Response(
@@ -281,7 +287,7 @@ class RecordDipReadingView(APIView):
 
         reading = DipReading.objects.create(
             tank=tank,
-            dip_depth_cm=dip_depth_cm,
+            dip_depth_cm=dip_depth_cm or Decimal('0.00'),
             physical_liters=physical_liters_dec,
             expected_liters=expected_liters,
             variance_liters=variance_liters,
@@ -292,7 +298,7 @@ class RecordDipReadingView(APIView):
         tank.save()
 
         return Response(DipReadingSerializer(reading).data, status=status.HTTP_201_CREATED)
-
+    
 class RecordDeliveryView(APIView):
     permission_classes = [IsInventoryOfficerOrAdmin]
 
