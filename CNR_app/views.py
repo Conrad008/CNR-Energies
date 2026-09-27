@@ -187,15 +187,21 @@ class RecordClosingMetersView(APIView):
             return Response({"error": "Active shift not found."}, status=status.HTTP_404_NOT_FOUND)
 
         readings_data = request.data.get('readings', [])
-        tank_deductions = {}  # tank_id -> total liters to deduct
 
+        to_update = []  
         for item in readings_data:
             try:
                 reading = PumpReading.objects.select_related('nozzle__tank').get(shift=shift, nozzle_id=item['nozzle_id'])
             except PumpReading.DoesNotExist:
                 continue
 
-            closing_val = Decimal(str(item['closing_meter']))
+            try:
+                closing_val = Decimal(str(item['closing_meter']))
+            except Exception:
+                return Response(
+                    {"error": f"Invalid closing meter value for nozzle {item['nozzle_id']}."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             if closing_val < reading.opening_meter:
                 return Response(
@@ -203,7 +209,11 @@ class RecordClosingMetersView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if reading.closing_meter is None:
+            to_update.append((reading, closing_val, reading.closing_meter is None))
+
+        tank_deductions = {}
+        for reading, closing_val, is_first_close in to_update:
+            if is_first_close:
                 liters_sold = closing_val - reading.opening_meter
                 tank_id = reading.nozzle.tank_id
                 tank_deductions[tank_id] = tank_deductions.get(tank_id, Decimal('0.00')) + liters_sold
