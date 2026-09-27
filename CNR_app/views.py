@@ -187,18 +187,35 @@ class RecordClosingMetersView(APIView):
             return Response({"error": "Active shift not found."}, status=status.HTTP_404_NOT_FOUND)
 
         readings_data = request.data.get('readings', [])
+        tank_deductions = {}  # tank_id -> total liters to deduct
+
         for item in readings_data:
             try:
-                reading = PumpReading.objects.get(shift=shift, nozzle_id=item['nozzle_id'])
-                closing_val = Decimal(str(item['closing_meter']))
-
-                if closing_val < reading.opening_meter:
-                    return Response({"error": f"Closing meter for nozzle {item['nozzle_id']} cannot be lower than opening meter."}, status=status.HTTP_400_BAD_REQUEST)
-
-                reading.closing_meter = closing_val
-                reading.save()
+                reading = PumpReading.objects.select_related('nozzle__tank').get(shift=shift, nozzle_id=item['nozzle_id'])
             except PumpReading.DoesNotExist:
                 continue
+
+            closing_val = Decimal(str(item['closing_meter']))
+
+            if closing_val < reading.opening_meter:
+                return Response(
+                    {"error": f"Closing meter for nozzle {item['nozzle_id']} cannot be lower than opening meter."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if reading.closing_meter is None:
+                liters_sold = closing_val - reading.opening_meter
+                tank_id = reading.nozzle.tank_id
+                tank_deductions[tank_id] = tank_deductions.get(tank_id, Decimal('0.00')) + liters_sold
+
+            reading.closing_meter = closing_val
+            reading.save()
+
+        if tank_deductions:
+            tanks = Tank.objects.select_for_update().filter(id__in=tank_deductions.keys())
+            for tank in tanks:
+                tank.current_capacity_liters -= tank_deductions[tank.id]
+                tank.save()
 
         shift.status = Shift.Status.PENDING_RECONCILIATION
         shift.save()
