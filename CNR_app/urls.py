@@ -25,9 +25,9 @@ from CNR_app.views import (
     ExecutiveDashboardAnalyticsView,
     StockSummaryAnalyticsView,
     AuditLogListView,
-     InitiateSTKPushView, 
-     MpesaCallbackView, 
-     MpesaStatusView,
+    InitiateSTKPushView, 
+    MpesaCallbackView, 
+    MpesaStatusView,
 )
 urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
