@@ -71,39 +71,6 @@ Fuel Delivery → Tanks Holding → Pump Dispensing → Attendant Shifts → Pay
 
 ---
 
-## API Architecture Blueprint
-
-The platform exposes structured RESTful endpoints grouped by operational modules:
-
-| Module | Method | Endpoint | Description | Access |
-|---|---|---|---|---|
-| **Auth** | `POST` | `/api/auth/login/` | Obtain JWT access & refresh tokens | Public |
-| | `POST` | `/api/auth/refresh/` | Refresh expired access token | Public |
-| | `GET` | `/api/users/me/` | Fetch active user profile & RBAC permissions | Authenticated |
-| **Users** | `GET` | `/api/users/` | List all system users & roles | Admin/Manager |
-| | `POST` | `/api/users/` | Register new station staff | Admin |
-| **Stations** | `GET` | `/api/stations/` | List station facilities | Authenticated |
-| **Fuel & Pricing**| `GET` | `/api/fuel-products/` | List fuel types & current prices | Authenticated |
-| | `POST` | `/api/fuel-prices/` | Log price update with effective timestamp | Manager/Admin |
-| **Pumps & Tanks** | `GET` | `/api/pumps/` | List pumps and assigned nozzles | Authenticated |
-| | `GET` | `/api/tanks/` | View tank capacities & fuel levels | Authenticated |
-| | `POST` | `/api/tanks/{id}/dips/` | Record physical dipstick reading | Manager/Inventory |
-| | `POST` | `/api/deliveries/` | Record incoming fuel tanker batch | Manager/Inventory |
-| **Shifts** | `POST` | `/api/shifts/start/` | Open attendant shift with opening meters | Attendant/Manager |
-| | `GET` | `/api/shifts/` | List shift logs & operational statuses | Authenticated |
-| | `POST` | `/api/shifts/{id}/close/` | Close shift with closing meters & collections | Attendant/Manager |
-| | `POST` | `/api/shifts/{id}/approve/` | Approve shift reconciliation & variance | Manager/Admin |
-| **Sales** | `POST` | `/api/sales/` | Record fuel transaction | Attendant/Manager |
-| | `GET` | `/api/sales/` | List transaction logs | Authenticated |
-| **Payments** | `POST` | `/api/payments/` | Process cash, card, or credit settlement | Attendant/Manager |
-| | `POST` | `/api/payments/mpesa/stk/` | Trigger M-Pesa STK push request | Attendant/Manager |
-| **Credit Accounts**| `GET` | `/api/credit-customers/` | List B2B accounts, balances & limits | Authenticated |
-| | `POST` | `/api/credit-customers/{id}/payments/` | Record credit debt settlement | Accountant/Admin |
-| **Analytics** | `GET` | `/api/analytics/dashboard/` | Real-time sales, inventory & variance metrics | Manager/Admin |
-| **Audit Logs** | `GET` | `/api/audit-logs/` | View system activity trail | Admin |
-
----
-
 ## Domain Entity Relationship (ERD Overview)
 
 ```text
