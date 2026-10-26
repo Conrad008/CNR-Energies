@@ -216,3 +216,44 @@ class MpesaTransactionSerializer(serializers.ModelSerializer):
             'result_desc', 'created_at', 'completed_at'
         ]
         read_only_fields = fields
+
+class LeaveApplicationSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    supervisor_name = serializers.SerializerMethodField()
+    mobile_number = serializers.ReadOnlyField(source='employee.phone_number')
+    reviewed_by_email = serializers.ReadOnlyField(source='reviewed_by.email')
+
+    class Meta:
+        model = LeaveApplication
+        fields = [
+            'id', 'employee', 'employee_name', 'supervisor', 'supervisor_name', 'mobile_number',
+            'leave_type', 'from_date', 'to_date', 'no_of_days', 'applied_date', 'reason',
+            'supporting_document', 'status', 'reviewed_by', 'reviewed_by_email',
+            'review_notes', 'reviewed_at', 'created_at',
+        ]
+        read_only_fields = [
+            'id', 'employee', 'supervisor', 'no_of_days', 'applied_date',
+            'status', 'reviewed_by', 'review_notes', 'reviewed_at', 'created_at',
+        ]
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.email
+
+    def get_supervisor_name(self, obj):
+        if not obj.supervisor:
+            return None
+        return f"{obj.supervisor.first_name} {obj.supervisor.last_name}".strip() or obj.supervisor.email
+
+    def validate(self, attrs):
+        from_date = attrs.get('from_date')
+        to_date = attrs.get('to_date')
+        if from_date and to_date and to_date < from_date:
+            raise serializers.ValidationError("'to_date' cannot be before 'from_date'.")
+
+        leave_type = attrs.get('leave_type')
+        document = attrs.get('supporting_document') or getattr(self.instance, 'supporting_document', None)
+        if leave_type and leave_type != LeaveApplication.LeaveType.ANNUAL and not document:
+            raise serializers.ValidationError(
+                "Supporting documentation is required for this leave type (e.g. a medical or birth notification)."
+            )
+        return attrs
