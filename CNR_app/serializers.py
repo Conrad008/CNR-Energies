@@ -257,3 +257,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
                 "Supporting documentation is required for this leave type (e.g. a medical or birth notification)."
             )
         return attrs
+
+class LeaveReviewSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=[LeaveApplication.Status.APPROVED, LeaveApplication.Status.REJECTED])
+    review_notes = serializers.CharField(required=False, allow_blank=True, max_length=255)
