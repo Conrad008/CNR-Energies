@@ -284,3 +284,48 @@ class MpesaTransaction(models.Model):
 
     def __str__(self):
         return f"{self.phone_number} - KES {self.amount} ({self.status})"
+
+class LeaveApplication(models.Model):
+    class LeaveType(models.TextChoices):
+        ANNUAL = 'ANNUAL', 'Annual Leave'
+        MATERNITY = 'MATERNITY', 'Maternity Leave'
+        PATERNITY = 'PATERNITY', 'Paternity Leave'
+        SICK = 'SICK', 'Sick Leave'
+
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='leave_applications')
+    supervisor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='leave_applications_to_review'
+    )
+    leave_type = models.CharField(max_length=20, choices=LeaveType.choices)
+    from_date = models.DateField()
+    to_date = models.DateField()
+    no_of_days = models.PositiveIntegerField(editable=False, default=0)
+    applied_date = models.DateField(auto_now_add=True)
+    reason = models.TextField(blank=True)
+    supporting_document = models.FileField(upload_to='leave_documents/%Y/%m/', null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_leave_applications'
+    )
+    review_notes = models.CharField(max_length=255, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.from_date and self.to_date:
+            self.no_of_days = (self.to_date - self.from_date).days + 1
+        if not self.supervisor_id and self.employee_id:
+            self.supervisor = self.employee.supervisor
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.employee.email} - {self.get_leave_type_display()} ({self.from_date} to {self.to_date})"
