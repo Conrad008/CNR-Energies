@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
+from datetime import date
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -30,15 +31,42 @@ class User(AbstractUser):
         ACCOUNTANT = 'ACCOUNTANT', 'Accountant'
         INVENTORY_OFFICER = 'INVENTORY_OFFICER', 'Inventory Officer'
 
+    class Gender(models.TextChoices):
+        MALE = 'MALE', 'Male'
+        FEMALE = 'FEMALE', 'Female'
+        OTHER = 'OTHER', 'Other'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.ATTENDANT)
     phone_number = models.CharField(max_length=10, blank=True, null=True)
 
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=Gender.choices, blank=True)
+    national_id = models.CharField(max_length=20, blank=True, unique=False)
+    kra_pin = models.CharField(max_length=20, blank=True)
+    nhif_number = models.CharField(max_length=20, blank=True)
+    salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    contract_start_date = models.DateField(null=True, blank=True)
+    contract_end_date = models.DateField(null=True, blank=True)
+    supervisor = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='direct_reports', limit_choices_to={'is_active': True}
+    )
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    
+    @property
+    def age(self):
+        if not self.date_of_birth:
+            return None
+        today = date.today()
+        return today.year - self.date_of_birth.year - (
+            (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+        )
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
