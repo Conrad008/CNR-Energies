@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from CNR_app.models import AuditLog, User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment, CreditSale, MpesaTransaction
+from CNR_app.models import (AuditLog,
+ User, Station, FuelProduct, FuelPriceHistory, Tank, Pump, Nozzle, Shift, PumpReading, 
+ Reconciliation, DipReading, Delivery, CreditCustomer, CreditPayment, CreditSale, MpesaTransaction,
+ LeaveApplication)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -24,11 +27,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class UserSerializer(serializers.ModelSerializer):
+    age = serializers.ReadOnlyField()
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'is_active', 'date_joined']
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'is_active', 'date_joined',
+            'date_of_birth', 'age', 'gender', 'national_id', 'kra_pin', 'nhif_number',
+            'salary', 'contract_start_date', 'contract_end_date', 'supervisor',
+        ]
         read_only_fields = ['id', 'date_joined', 'role', 'is_active']
-
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
