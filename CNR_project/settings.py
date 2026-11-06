@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',      
+    'cloudinary',
     'CNR_app',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -183,3 +185,5 @@ MPESA_BASE_URL = (
     'https://sandbox.safaricom.co.ke' if MPESA_ENV == 'sandbox'
     else 'https://api.safaricom.co.ke'
 )
+
+HR_NOTIFICATION_EMAIL = os.environ.get('HR_NOTIFICATION_EMAIL', 'hr@cnrenergies.com')
