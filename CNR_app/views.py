@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.db.models import Sum, Count, Q
 from django.shortcuts import render
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -672,7 +672,7 @@ class LeaveApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         if serializer.instance.employee != self.request.user:
-            raise PermissionDeniedError := serializers.ValidationError("You can only edit your own leave application.")
+            raise serializers.ValidationError("You can only edit your own leave application.")
         if serializer.instance.status != LeaveApplication.Status.PENDING:
             raise serializers.ValidationError("Only pending applications can be edited.")
         serializer.save()
