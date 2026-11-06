@@ -645,3 +645,16 @@ class MpesaStatusView(APIView):
         except MpesaTransaction.DoesNotExist:
             return Response({"error": "Transaction not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(MpesaTransactionSerializer(txn).data)
+
+class LeaveApplicationListCreateView(generics.ListCreateAPIView):
+    serializer_class = LeaveApplicationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in [User.Role.SUPER_ADMIN, User.Role.MANAGER, User.Role.ACCOUNTANT]:
+            return LeaveApplication.objects.all().order_by('-created_at')
+        return LeaveApplication.objects.filter(
+            Q(employee=user) | Q(supervisor=user)
+        ).order_by('-created_at')
