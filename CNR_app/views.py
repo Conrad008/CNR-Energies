@@ -658,3 +658,49 @@ class LeaveApplicationListCreateView(generics.ListCreateAPIView):
         return LeaveApplication.objects.filter(
             Q(employee=user) | Q(supervisor=user)
         ).order_by('-created_at')
+
+class LeaveApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = LeaveApplicationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in [User.Role.SUPER_ADMIN, User.Role.MANAGER, User.Role.ACCOUNTANT]:
+            return LeaveApplication.objects.all()
+        return LeaveApplication.objects.filter(Q(employee=user) | Q(supervisor=user))
+
+    def perform_update(self, serializer):
+        if serializer.instance.employee != self.request.user:
+            raise PermissionDeniedError := serializers.ValidationError("You can only edit your own leave application.")
+        if serializer.instance.status != LeaveApplication.Status.PENDING:
+            raise serializers.ValidationError("Only pending applications can be edited.")
+        serializer.save()
+
+
+class LeaveApplicationReviewView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            leave = LeaveApplication.objects.select_for_update().get(pk=pk)
+        except LeaveApplication.DoesNotExist:
+            return Response({"error": "Leave application not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if leave.status != LeaveApplication.Status.PENDING:
+            return Response({"error": "This application has already been reviewed."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = LeaveReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        leave.status = serializer.validated_data['status']
+        leave.review_notes = serializer.validated_data.get('review_notes', '')
+        leave.reviewed_by = request.user
+        leave.reviewed_at = timezone.now()
+        leave.save()
+
+        log_action(request.user, f"LEAVE_{leave.status}", 'LeaveApplication', leave.id, {
+            'employee': leave.employee.email, 'notes': leave.review_notes
+        })
+        return Response(LeaveApplicationSerializer(leave).data, status=status.HTTP_200_OK)
