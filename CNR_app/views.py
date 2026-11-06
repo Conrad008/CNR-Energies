@@ -704,3 +704,19 @@ class LeaveApplicationReviewView(APIView):
             'employee': leave.employee.email, 'notes': leave.review_notes
         })
         return Response(LeaveApplicationSerializer(leave).data, status=status.HTTP_200_OK)
+
+class LeaveReportExportView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def get(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="leave_report.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Employee', 'Leave Type', 'From', 'To', 'Days', 'Status', 'Applied On', 'Reviewed By'])
+        for leave in LeaveApplication.objects.select_related('employee', 'reviewed_by').order_by('-applied_date'):
+            writer.writerow([
+                leave.employee.email, leave.get_leave_type_display(), leave.from_date, leave.to_date,
+                leave.no_of_days, leave.get_status_display(), leave.applied_date,
+                leave.reviewed_by.email if leave.reviewed_by else '',
+            ])
+        return response
