@@ -720,3 +720,18 @@ class LeaveReportExportView(APIView):
                 leave.reviewed_by.email if leave.reviewed_by else '',
             ])
         return response
+
+class SalaryReportExportView(APIView):
+    permission_classes = [IsAccountantOrAdmin]
+
+    def get(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="salary_report.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Employee', 'Role', 'Salary', 'Contract Start', 'Contract End'])
+        for user in User.objects.all().order_by('last_name'):
+            writer.writerow([
+                user.email, user.get_role_display(), user.salary or '',
+                user.contract_start_date or '', user.contract_end_date or '',
+            ])
+        return response
