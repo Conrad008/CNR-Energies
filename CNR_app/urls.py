@@ -28,6 +28,12 @@ from CNR_app.views import (
     InitiateSTKPushView, 
     MpesaCallbackView, 
     MpesaStatusView,
+    LeaveApplicationListCreateView,
+    LeaveApplicationDetailView,
+    LeaveApplicationReviewView,
+    LeaveReportExportView,
+    SalaryReportExportView,
+    PersonnelReportExportView,
 )
 urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='login'),
@@ -58,4 +64,10 @@ urlpatterns = [
     path('mpesa/stk-push/', InitiateSTKPushView.as_view(), name='mpesa_stk_push'),
     path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa_callback'),
     path('mpesa/status/<str:checkout_id>/', MpesaStatusView.as_view(), name='mpesa_status'),
+    path('leave/', LeaveApplicationListCreateView.as_view(), name='leave_list_create'),
+    path('leave/<uuid:pk>/', LeaveApplicationDetailView.as_view(), name='leave_detail'),
+    path('leave/<uuid:pk>/review/', LeaveApplicationReviewView.as_view(), name='leave_review'),
+    path('reports/leave/export/', LeaveReportExportView.as_view(), name='leave_report_export'),
+    path('reports/salary/export/', SalaryReportExportView.as_view(), name='salary_report_export'),
+    path('reports/personnel/export/', PersonnelReportExportView.as_view(), name='personnel_report_export'),
 ]
