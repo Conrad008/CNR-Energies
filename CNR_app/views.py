@@ -735,3 +735,23 @@ class SalaryReportExportView(APIView):
                 user.contract_start_date or '', user.contract_end_date or '',
             ])
         return response
+
+class PersonnelReportExportView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def get(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="personnel_report.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            'Email', 'First Name', 'Last Name', 'Role', 'Phone', 'DOB', 'Age', 'Gender',
+            'National ID', 'KRA PIN', 'NHIF No.', 'Contract Start', 'Contract End', 'Active'
+        ])
+        for user in User.objects.all().order_by('last_name'):
+            writer.writerow([
+                user.email, user.first_name, user.last_name, user.get_role_display(), user.phone_number,
+                user.date_of_birth or '', user.age or '', user.get_gender_display() if user.gender else '',
+                user.national_id, user.kra_pin, user.nhif_number,
+                user.contract_start_date or '', user.contract_end_date or '', user.is_active,
+            ])
+        return response
